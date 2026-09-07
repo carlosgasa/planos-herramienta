@@ -1,0 +1,180 @@
+@import "tailwindcss";
+
+:root {
+  --bg-app: #0a0a10;
+  --bg-canvas: #050508;
+  --panel-bg: rgba(14, 13, 20, 0.55);
+  --panel-bg-solid: rgba(20, 19, 30, 0.92);
+  --panel-border: rgba(255, 255, 255, 0.07);
+  --hairline: rgba(255, 255, 255, 0.08);
+  --glass-weak: rgba(255, 255, 255, 0.028);
+  --glass-strong: rgba(255, 255, 255, 0.07);
+  --overlay-scrim: rgba(6, 6, 10, 0.6);
+  --text-primary: #e9e8f5;
+  --text-secondary: #a8a6c0;
+  --text-tertiary: #6d6b86;
+  --grid-line: rgba(255, 255, 255, 0.065);
+  --canvas-shadow: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 18px 60px rgba(0, 0, 0, 0.55), 0 0 90px rgba(120, 90, 255, 0.45), 0 0 140px rgba(34, 211, 238, 0.18);
+
+  --accent-a: #22d3ee;
+  --accent-b: #a855f7;
+
+  --ink-wall: #e9e8f5;
+  --ink-symbol: #cfcde4;
+  --ink-window: #7dd3fc;
+
+  --layer-base: #9aa0ab;
+  --layer-drenaje: #f4f3ff;
+  --layer-hidraulica: #38bdf8;
+  --layer-electrica: #facc15;
+
+  --pipe-fria: #38bdf8;
+  --pipe-caliente: #fb7185;
+  --fitting-hl: #f472b6;
+  --stair-hl: #34d399;
+
+  --circuit-contactos: #4ade80;
+  --circuit-iluminacion: #facc15;
+  --circuit-fuerza: #fb923c;
+
+  /* Texto de insignias/estados sobre su propio fondo translúcido (banner de
+     aviso, botón "Sí" de confirmar borrado, toggles activos, enlaces al
+     pasar el mouse) — en temas oscuros un tono claro contrasta bien contra
+     el fondo oscuro de la app detrás de esa translucidez, pero el mismo
+     tono claro se pierde contra un fondo de app ya claro, así que el tema
+     claro usa una versión bastante más oscura del mismo color (bug real,
+     reportado: "blanco sobre blanco"/texto que casi no se leía). */
+  --warn-text: #fde68a;
+  --danger-text: #fca5a5;
+  --accent-purple-text: #e9d5ff;
+  --link-hover-text: #67e8f9;
+}
+
+:root[data-theme="light"] {
+  --bg-app: #dfe2ec;
+  --bg-canvas: #ffffff;
+  --panel-bg: rgba(255, 255, 255, 0.68);
+  --panel-bg-solid: rgba(255, 255, 255, 0.94);
+  --panel-border: rgba(20, 20, 40, 0.08);
+  --hairline: rgba(20, 20, 40, 0.1);
+  --glass-weak: rgba(20, 20, 40, 0.035);
+  --glass-strong: rgba(20, 20, 40, 0.07);
+  --overlay-scrim: rgba(120, 120, 145, 0.35);
+  --text-primary: #1a1a24;
+  --text-secondary: #55536b;
+  --text-tertiary: #85839a;
+  --grid-line: rgba(20, 20, 40, 0.075);
+  --canvas-shadow: 0 10px 45px rgba(0, 0, 0, 0.5), 0 0 60px rgba(80, 70, 140, 0.32);
+
+  --ink-wall: #1f2430;
+  --ink-symbol: #4a4860;
+  --ink-window: #0369a1;
+
+  --layer-base: #6b6980;
+  --layer-drenaje: #1f2430;
+  --layer-hidraulica: #0284c7;
+  --layer-electrica: #a16207;
+
+  --pipe-fria: #0284c7;
+  --pipe-caliente: #dc2626;
+  --fitting-hl: #db2777;
+  --stair-hl: #15803d;
+
+  --circuit-contactos: #16a34a;
+  --circuit-iluminacion: #a16207;
+  --circuit-fuerza: #c2410c;
+
+  --warn-text: #92400e;
+  --danger-text: #b91c1c;
+  --accent-purple-text: #7e22ce;
+  --link-hover-text: #0e7490;
+}
+
+:root[data-theme="intermedio"] {
+  --bg-app: #1e2129;
+  --bg-canvas: #14161c;
+  --panel-bg: rgba(36, 40, 51, 0.72);
+  --panel-bg-solid: rgba(36, 40, 51, 0.94);
+  --panel-border: rgba(255, 255, 255, 0.09);
+  --hairline: rgba(255, 255, 255, 0.1);
+  --glass-weak: rgba(255, 255, 255, 0.04);
+  --glass-strong: rgba(255, 255, 255, 0.09);
+  --overlay-scrim: rgba(10, 10, 16, 0.5);
+  --text-primary: #e4e2ea;
+  --text-secondary: #a3a0b0;
+  --text-tertiary: #76748a;
+  --grid-line: rgba(255, 255, 255, 0.08);
+  --canvas-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 14px 50px rgba(0, 0, 0, 0.45), 0 0 80px rgba(120, 100, 255, 0.32);
+
+  --ink-wall: #e4e2ea;
+  --ink-symbol: #c2bfd0;
+  --ink-window: #7dd3fc;
+
+  --layer-base: #9aa0ab;
+  --layer-drenaje: #e4e2ea;
+  --layer-hidraulica: #38bdf8;
+  --layer-electrica: #eab308;
+
+  --pipe-fria: #38bdf8;
+  --pipe-caliente: #f87171;
+  --fitting-hl: #ec4899;
+  --stair-hl: #34d399;
+
+  --circuit-contactos: #4ade80;
+  --circuit-iluminacion: #eab308;
+  --circuit-fuerza: #f97316;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg-app);
+  color: var(--text-primary);
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  overflow: hidden;
+  transition: background-color .15s ease, color .15s ease;
+}
+
+.font-mono-ui {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+/* Guion animado de dirección de flujo — solo cosmético para la vista en
+   vivo. El PDF exportado (una foto estática vía html2canvas) no anima
+   nada, por eso el tramo también dibuja flechitas fijas encima
+   (`flowArrowMarks()` en PlanCanvas.tsx) que sí garantizan la dirección
+   en el PDF. */
+.flow-line {
+  animation: flowdash 1.1s linear infinite;
+}
+@keyframes flowdash {
+  to { stroke-dashoffset: -20; }
+}
+
+/* Aparición suave del resaltado de selección — anima un "pop" de escala en
+   vez de opacity para no pisar el opacity propio de cada resaltado (el
+   contorno de muro/tubería usa 0.35, por ejemplo). */
+.sel-highlight {
+  animation: selPopIn .15s ease-out;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@keyframes selPopIn {
+  from { transform: scale(0.85); }
+  to { transform: scale(1); }
+}
+
+/* Botones de agrandar/reducir el lienzo en cada lado (ver ResizePill en
+   PlanCanvas.tsx) — resaltan un poco al pasar el mouse encima. */
+.canvas-resize-pill rect:first-child {
+  transition: fill .12s ease;
+}
+.canvas-resize-pill:hover rect:first-child {
+  fill: var(--glass-strong);
+}
+.canvas-resize-pill:hover text {
+  fill: var(--text-primary);
+}

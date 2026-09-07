@@ -1,0 +1,40 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+dev-dist
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# firebase env — la config de cliente en .env no es secreta, pero de
+# cualquier forma no va al repo por costumbre; lo que NUNCA debe
+# commitearse es una service account key (credencial de administrador)
+.env
+.env.local
+.env.*.local
+
+# credenciales de administrador (nunca deben existir en el repo)
+serviceAccountKey.json
+service-account*.json
+*firebase-adminsdk*.json
+*.serviceaccount.json
+*.pem
+*.p12
