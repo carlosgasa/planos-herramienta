@@ -248,6 +248,26 @@ function DistancePreview({ cursor, color, segmentM, totalM }: { cursor: Pt; colo
   )
 }
 
+/** Preview de ancho/alto/área mientras se dibuja un domo/rectángulo (tools
+ *  de dos puntos con `preview: 'rect'`) — la distancia diagonal sola
+ *  (`DistancePreview`) no dice nada útil para una caja, así que aquí se
+ *  arman esas tres medidas a partir de los mismos dos puntos. */
+function RectDimensionsPreview({ cursor, color, widthM, heightM }: { cursor: Pt; color: string; widthM: number; heightM: number }) {
+  const lines = [`${widthM.toFixed(2)} × ${heightM.toFixed(2)} m`, `Área ${(widthM * heightM).toFixed(2)} m²`]
+  const w = 108
+  const h = 34
+  const x = cursor.x + 14
+  const y = cursor.y - 14 - h
+  return (
+    <g pointerEvents="none">
+      <rect x={x} y={y} width={w} height={h} rx={5} fill="var(--panel-bg)" stroke={color} strokeWidth={1} opacity={0.92} />
+      {lines.map((line, i) => (
+        <text key={line} x={x + w / 2} y={y + 13 + i * 16} textAnchor="middle" fontSize={10} fill={color} className="font-mono-ui">{line}</text>
+      ))}
+    </g>
+  )
+}
+
 /** Botones +10m/-1m en cada lado del lienzo para agrandarlo/reducirlo — ver
  *  `resizeCanvas` en el store. Encimados sobre el borde del plano, no sobre
  *  la herramienta activa, por eso cada uno detiene la propagación del clic
@@ -846,7 +866,9 @@ export const PlanCanvas = memo(function PlanCanvas({ level: levelProp, layerStat
           {twoPointTool.preview === 'rect'
             ? <rect x={Math.min(chainStart.x, cursorPt.x)} y={Math.min(chainStart.y, cursorPt.y)} width={Math.abs(cursorPt.x - chainStart.x)} height={Math.abs(cursorPt.y - chainStart.y)} fill="none" stroke={twoPointTool.previewColor} strokeWidth={1.6} strokeDasharray="4 3" />
             : <line x1={chainStart.x} y1={chainStart.y} x2={cursorPt.x} y2={cursorPt.y} stroke={twoPointTool.previewColor} strokeWidth={1.4} strokeDasharray="3 3" />}
-          <DistancePreview cursor={cursorPt} color={twoPointTool.previewColor} segmentM={distanceM(chainStart, cursorPt)} totalM={null} />
+          {twoPointTool.preview === 'rect'
+            ? <RectDimensionsPreview cursor={cursorPt} color={twoPointTool.previewColor} widthM={Math.abs(cursorPt.x - chainStart.x) / 100} heightM={Math.abs(cursorPt.y - chainStart.y) / 100} />
+            : <DistancePreview cursor={cursorPt} color={twoPointTool.previewColor} segmentM={distanceM(chainStart, cursorPt)} totalM={null} />}
         </g>
       )}
 
