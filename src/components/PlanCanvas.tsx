@@ -19,7 +19,9 @@ const SHRINK_STEP = 100 // 1 m
 // por índice de la lista (no representa nada semántico del cuarto). Ya
 // depende de `showRoomAreas` igual que la etiqueta de m² porque ambos leen
 // del mismo arreglo `rooms`, que sale vacío cuando el toggle "Área" está
-// apagado.
+// apagado. Solo se pinta en la vista en vivo (`interactive`) — el PDF
+// exportado se queda en blanco total ahí, a petición explícita (aspecto más
+// sobrio de plano impreso); la etiqueta de m² sigue saliendo en ambos.
 const ROOM_FILL_COLORS = ['#22d3ee', '#a855f7', '#facc15', '#4ade80', '#fb7185', '#38bdf8', '#f472b6', '#fbbf24']
 
 type Pt = { x: number; y: number }
@@ -129,7 +131,13 @@ function pathMidpoint(d: string): Pt {
   return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
 }
 
-function renderObject(o: DrawObject, selected: boolean) {
+/** `exportMode` afina solo lo que cambia entre la vista en vivo y el PDF: sin
+ *  el guion animado (congelarlo a medio parpadeo se veía como un trazo
+ *  borroso en la foto de html2canvas) y flechas de flujo más chicas y más
+ *  seguidas (spacing menor), para que tramos encimados se distingan mejor en
+ *  el plano impreso — a petición explícita, no cambia nada de la vista en
+ *  vivo. */
+function renderObject(o: DrawObject, selected: boolean, exportMode = false) {
   switch (o.kind) {
     case 'wall':
       return (
@@ -173,24 +181,27 @@ function renderObject(o: DrawObject, selected: boolean) {
           {o.label && <text x={o.x + o.w / 2} y={o.y + o.h + 14} fill="#c084fc" fontSize={9} textAnchor="middle" className="font-mono-ui">{o.label}</text>}
         </g>
       )
-    case 'path':
+    case 'path': {
+      const arrowSpacing = exportMode ? 20 : 36
+      const arrowScale = exportMode ? 0.6 : 1
       return (
         <g key={o.id}>
           {selected && <path className="sel-highlight" d={o.d} stroke="#22d3ee" strokeWidth={o.strokeWidth + 8} fill="none" opacity={0.35} />}
           <path
             d={o.d} stroke={o.stroke} strokeWidth={o.strokeWidth} fill={o.filled ? o.stroke : 'none'}
             strokeDasharray={o.dashed ? '4 3' : o.animated ? '3 7' : undefined}
-            className={o.animated ? 'flow-line' : undefined}
+            className={!exportMode && o.animated ? 'flow-line' : undefined}
           />
-          {o.animated && flowArrowMarks(o.d, 36).map((m, i) => (
+          {o.animated && flowArrowMarks(o.d, arrowSpacing).map((m, i) => (
             <path
               key={i} d="M -4.5 -3.2 L 3.2 0 L -4.5 3.2" stroke={o.stroke} strokeWidth={Math.max(1.2, o.strokeWidth * 0.55)}
               fill="none" strokeLinecap="round" strokeLinejoin="round"
-              transform={`translate(${m.x} ${m.y}) rotate(${m.angle})`}
+              transform={`translate(${m.x} ${m.y}) rotate(${m.angle}) scale(${arrowScale})`}
             />
           ))}
         </g>
       )
+    }
     case 'circle':
       return <circle key={o.id} cx={o.cx} cy={o.cy} r={o.r} stroke={o.stroke} strokeWidth={1.4} fill={o.fill ?? 'none'} />
     case 'rect':
@@ -773,7 +784,7 @@ export const PlanCanvas = memo(function PlanCanvas({ level: levelProp, layerStat
 
       {ghostVisible && previousLevel && (
         <g opacity={0.16}>
-          {previousLevel.layers.base.filter((o) => o.kind === 'wall').map((o) => renderObject(o, false))}
+          {previousLevel.layers.base.filter((o) => o.kind === 'wall').map((o) => renderObject(o, false, !interactive))}
         </g>
       )}
 
@@ -781,10 +792,11 @@ export const PlanCanvas = memo(function PlanCanvas({ level: levelProp, layerStat
         const st = layerState[key]
         const opacity = st.visible ? st.opacity / 100 : 0
         return (
-          <g key={key} style={{ opacity, transition: 'opacity .15s ease' }} filter={key !== 'base' ? 'url(#glowSoft)' : undefined}>
+          <g key={key} style={{ opacity, transition: 'opacity .15s ease' }} filter={key !== 'base' && interactive ? 'url(#glowSoft)' : undefined}>
             {current.layers[key].map((o) => renderObject(
               applyDragPreview(o, dragPreview),
-              (selection?.layer === key && selection.id === o.id) || (store.multiSelection?.layer === key && store.multiSelection.ids.includes(o.id))
+              (selection?.layer === key && selection.id === o.id) || (store.multiSelection?.layer === key && store.multiSelection.ids.includes(o.id)),
+              !interactive
             ))}
             {interactive && key === 'electrica' && store.electricaStage === 'cableado' && current.layers.electrica.map((o) => {
               if (o.kind !== 'path') return null
@@ -803,7 +815,7 @@ export const PlanCanvas = memo(function PlanCanvas({ level: levelProp, layerStat
 
       {rooms.length > 0 && (
         <g pointerEvents="none">
-          {rooms.map((r, i) => (
+          {interactive && rooms.map((r, i) => (
             <polygon
               key={`room-fill-${i}`}
               points={r.points.map((p) => `${p.x},${p.y}`).join(' ')}
