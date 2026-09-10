@@ -151,8 +151,13 @@ export async function exportPlanToPdf(opts: {
     const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'letter' })
     const pageW = pdf.internal.pageSize.getWidth()
     const pageH = pdf.internal.pageSize.getHeight()
-    const margin = 14
-    const titleBlockH = 56
+    // Márgenes y bloque de título deliberadamente chicos — es la franja que
+    // le "roba" espacio al plano en sí, y a petición explícita se prioriza
+    // dejarle todo el espacio posible al dibujo. El bloque de título ahora
+    // es una sola línea (nombre en negritas + el resto de los datos en
+    // gris, todo en una fila) en vez de dos líneas de texto por lado.
+    const margin = 6
+    const titleBlockH = 20
     const availW = pageW - margin * 2
     const availH = pageH - margin * 2 - titleBlockH
 
@@ -174,18 +179,22 @@ export async function exportPlanToPdf(opts: {
       pdf.addImage(imgData, 'JPEG', x, y, w, h)
 
       const tbY = pageH - margin - titleBlockH
+      const tbMidY = tbY + titleBlockH / 2 + 3
       pdf.setDrawColor(200, 200, 210)
       pdf.rect(margin, tbY, availW, titleBlockH)
+
+      pdf.setFont('helvetica', 'bold')
+      pdf.setFontSize(9)
       pdf.setTextColor(26, 26, 36)
-      pdf.setFontSize(11)
-      pdf.text(project.name, margin + 12, tbY + 18)
-      pdf.setFontSize(8)
+      pdf.text(project.name, margin + 8, tbMidY)
+      const nameW = pdf.getTextWidth(project.name)
+
+      pdf.setFont('helvetica', 'normal')
+      pdf.setFontSize(7)
       pdf.setTextColor(85, 83, 107)
-      pdf.text(`NIVEL: ${levelLabel}`, margin + 12, tbY + 34)
-      pdf.text(`CAPA: ${capaLabel}`, margin + 12, tbY + 46)
-      pdf.text(`FECHA: ${new Date().toLocaleDateString('es-MX')}`, margin + 200, tbY + 34)
-      pdf.text(`ESCALA: ${project.scaleLabel}`, margin + 200, tbY + 46)
-      pdf.text(`PÁGINA ${i + 1} DE ${pages.length}`, pageW - margin - 90, tbY + 46)
+      const info = `NIVEL: ${levelLabel}   ·   CAPA: ${capaLabel}   ·   FECHA: ${new Date().toLocaleDateString('es-MX')}   ·   ESCALA: ${project.scaleLabel}`
+      pdf.text(info, margin + 8 + nameW + 14, tbMidY)
+      pdf.text(`PÁGINA ${i + 1} DE ${pages.length}`, pageW - margin - 58, tbMidY)
     }
 
     pdf.save(`${project.name.replace(/\s+/g, '_')}_${levelLabel}.pdf`)

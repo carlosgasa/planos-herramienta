@@ -874,8 +874,8 @@ export const PlanCanvas = memo(function PlanCanvas({ level: levelProp, layerStat
               const circuits = ids.map((id) => current.circuits.find((c) => c.id === id)).filter((c): c is Circuit => !!c)
               if (circuits.length === 0) return null
               const pts = parsePathPoints(o.d)
-              const spacing = 5
-              const fontSize = 6.5
+              const spacing = 7
+              const fontSize = 9.5
               return (
                 <g key={`${o.id}-circuitos`} pointerEvents="none">
                   {/* Un hilo de color por circuito asignado, en PARALELO al
@@ -936,7 +936,7 @@ export const PlanCanvas = memo(function PlanCanvas({ level: levelProp, layerStat
                             x={mid.x} y={mid.y} transform={`rotate(${angle} ${mid.x} ${mid.y})`}
                             textAnchor="middle" dominantBaseline="middle"
                             fontSize={fontSize} fill={c.color} className="font-mono-ui"
-                            stroke={haloColor} strokeWidth={1.1} paintOrder="stroke" strokeLinejoin="round"
+                            stroke={haloColor} strokeWidth={1.6} paintOrder="stroke" strokeLinejoin="round"
                           >
                             {label}
                           </text>
