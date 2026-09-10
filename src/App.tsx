@@ -12,6 +12,7 @@ import { CanvasViewport } from './components/CanvasViewport'
 import { LayersPanel } from './components/LayersPanel'
 import { ExportModal } from './components/ExportModal'
 import { Toast } from './components/Toast'
+import { useIsMobile } from './lib/useIsMobile'
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null)
@@ -21,6 +22,16 @@ export default function App() {
   const project = useProjectStore((s) => s.project)
   const syncState = useProjectStore((s) => s.syncState)
   const setSyncState = useProjectStore((s) => s.setSyncState)
+  const isMobile = useIsMobile()
+  const setViewOnly = useProjectStore((s) => s.setViewOnly)
+
+  // En móvil el editor completo (herramientas de dibujo, paneles de
+  // propiedades/capas) no cabe ni tiene sentido táctil en pantalla chica —
+  // se entra directo en modo visualización (ver store.viewOnly): solo el
+  // plano, pan/zoom. Puramente por ancho de viewport (useIsMobile), no un
+  // sniff de dispositivo — así que también reacciona si se achica/agranda
+  // la ventana en escritorio.
+  useEffect(() => { setViewOnly(isMobile) }, [isMobile, setViewOnly])
 
   useEffect(() => {
     if (!auth) return
@@ -130,7 +141,7 @@ export default function App() {
       <div className="relative z-10 flex flex-col h-full">
         <TopBar />
         <div className="flex-1 flex min-h-0">
-          <Toolbar />
+          {!isMobile && <Toolbar />}
           <main className="flex-1 relative overflow-hidden bg-[var(--bg-canvas)]">
             <div
               className="absolute inset-0"
@@ -141,7 +152,7 @@ export default function App() {
             />
             <CanvasViewport />
           </main>
-          <LayersPanel />
+          {!isMobile && <LayersPanel />}
         </div>
       </div>
 

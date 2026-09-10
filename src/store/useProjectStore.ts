@@ -88,7 +88,16 @@ interface ProjectStoreState {
   selection: Selection | null
   multiSelection: MultiSelection | null
   electricaStage: ElectricaStage
+  /** true en viewport móvil (ver `src/lib/useIsMobile.ts`, sincronizado
+   *  desde `App.tsx`) — el editor completo no cabe/no tiene sentido táctil
+   *  en pantalla chica, así que ahí se entra solo en modo visualización: sin
+   *  Toolbar/LayersPanel/CircuitsPanel, sin seleccionar ni arrastrar objetos
+   *  en el lienzo (`CanvasViewport.tsx` cae directo a paneo), solo pan/zoom.
+   *  No es responsabilidad del store decidir cuándo es "móvil" — solo
+   *  reacciona a lo que `setViewOnly` le diga. */
+  viewOnly: boolean
 
+  setViewOnly: (v: boolean) => void
   setPipeDiameter: (d: PipeDiameter) => void
   toggleDrenajeFlujo: () => void
   setWaterType: (w: WaterType) => void
@@ -238,7 +247,9 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
   selection: null,
   multiSelection: null,
   electricaStage: 'trazado',
+  viewOnly: false,
 
+  setViewOnly: (v) => set({ viewOnly: v }),
   setPipeDiameter: (d) => set({ pipeDiameter: d }),
   toggleDrenajeFlujo: () => set((s) => ({ drenajeFlujo: !s.drenajeFlujo })),
   setWaterType: (w) => set({ waterType: w }),

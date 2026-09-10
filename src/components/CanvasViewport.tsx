@@ -87,6 +87,7 @@ export function CanvasViewport() {
   const setHandlePoint = useProjectStore((s) => s.setHandlePoint)
   const toggleLayerVisible = useProjectStore((s) => s.toggleLayerVisible)
   const toggleLayerLock = useProjectStore((s) => s.toggleLayerLock)
+  const viewOnly = useProjectStore((s) => s.viewOnly)
   const panEnabled = activeTool === 'select' || spacePanning
   const hintDef = HINTS[activeTool]
 
@@ -221,7 +222,10 @@ export function CanvasViewport() {
       ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
       return
     }
-    if (activeTool === 'select' && project) {
+    // En modo visualización (móvil) el clic nunca selecciona ni arrastra un
+    // objeto — cae directo a la rama de paneo de abajo, como si el lienzo
+    // fuera puro pan/zoom. Ver `store.viewOnly`.
+    if (activeTool === 'select' && project && !viewOnly) {
       const lvl = project.levels.find((l) => l.key === level)
       const pt = svgPoint(e)
       if (lvl && pt) {
@@ -392,7 +396,7 @@ export function CanvasViewport() {
         </div>
       </div>
 
-      {hintDef && (() => {
+      {!viewOnly && hintDef && (() => {
         const st = layerState[hintDef.layer]
         if (st.locked) {
           return (
@@ -428,7 +432,7 @@ export function CanvasViewport() {
         )
       })()}
 
-      <CircuitsPanel />
+      {!viewOnly && <CircuitsPanel />}
 
       <div className="absolute right-6 bottom-4 flex items-center bg-[color:var(--panel-bg)] backdrop-blur-md border border-[color:var(--hairline)] rounded-full overflow-hidden">
         <button onClick={(e) => { e.stopPropagation(); setScale((s) => Math.max(MIN_SCALE, s - 0.15)) }} className="w-[30px] h-[30px] text-[var(--text-secondary)] text-base">−</button>

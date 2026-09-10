@@ -155,13 +155,23 @@ function polylineToPath(pts: Pt[]): string {
   return pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
 }
 
-function pathMidpoint(d: string): Pt {
-  const pts = parsePathPoints(d)
-  if (pts.length === 0) return { x: 0, y: 0 }
-  const i = Math.floor((pts.length - 1) / 2)
-  const a = pts[i]
-  const b = pts[Math.min(i + 1, pts.length - 1)]
-  return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
+function polylineLength(pts: Pt[]): number {
+  let len = 0
+  for (let i = 1; i < pts.length; i++) len += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y)
+  return len
+}
+
+/** Recorta la etiqueta de un circuito a lo que quepa a lo largo de su hilo
+ *  de color en el ducto (ver bloque de "Cableado" más abajo) — a diferencia
+ *  de HTML, un `<text>` de SVG no trunca solo con CSS, así que se estima el
+ *  ancho a mano (monoespaciada, ~0.6× el tamaño de fuente por carácter) y se
+ *  corta agregando "…" si no alcanza. */
+function truncateLabelToWidth(text: string, availPx: number, fontSize: number): string {
+  const charW = fontSize * 0.6
+  const maxChars = Math.floor(availPx / charW)
+  if (maxChars >= text.length) return text
+  if (maxChars <= 1) return ''
+  return text.slice(0, maxChars - 1) + '…'
 }
 
 /** `exportMode` afina solo lo que cambia entre la vista en vivo y el PDF: sin
@@ -831,27 +841,43 @@ export const PlanCanvas = memo(function PlanCanvas({ level: levelProp, layerStat
               (selection?.layer === key && selection.id === o.id) || (store.multiSelection?.layer === key && store.multiSelection.ids.includes(o.id)),
               !interactive
             ))}
-            {interactive && key === 'electrica' && store.electricaStage === 'cableado' && current.layers.electrica.map((o) => {
+            {interactive && key === 'electrica' && (store.electricaStage === 'cableado' || store.viewOnly) && current.layers.electrica.map((o) => {
               if (o.kind !== 'path') return null
               const ids = o.circuitIds ?? []
               const circuits = ids.map((id) => current.circuits.find((c) => c.id === id)).filter((c): c is Circuit => !!c)
-              const mid = pathMidpoint(o.d)
+              if (circuits.length === 0) return null
               const pts = parsePathPoints(o.d)
               const spacing = 5
+              const fontSize = 6.5
               return (
-                <g key={`${o.id}-badge`} pointerEvents="none">
+                <g key={`${o.id}-circuitos`} pointerEvents="none">
                   {/* Un hilo de color por circuito asignado, en abanico a los
-                      lados del ducto real — así se distingue de un vistazo
-                      cuántos y cuáles circuitos comparten ese tramo. */}
-                  {circuits.map((c, i) => (
-                    <path
-                      key={c.id}
-                      d={polylineToPath(offsetPolyline(pts, (i - (circuits.length - 1) / 2) * spacing))}
-                      stroke={c.color} strokeWidth={2} fill="none" strokeLinecap="round"
-                    />
-                  ))}
-                  <circle cx={mid.x} cy={mid.y} r={9} fill="var(--layer-electrica)" />
-                  <text x={mid.x} y={mid.y + 3} fontSize={9} fontWeight={700} textAnchor="middle" fill="#0a0a10" className="font-mono-ui">{ids.length}</text>
+                      lados del ducto real, con su nombre encima (truncado si
+                      no cabe) — así se distingue de un vistazo cuántos y
+                      cuáles circuitos comparten ese tramo. */}
+                  {circuits.map((c, i) => {
+                    const off = (i - (circuits.length - 1) / 2) * spacing
+                    const offsetPts = offsetPolyline(pts, off)
+                    const labelPts = offsetPolyline(pts, off + Math.sign(off || 1) * (spacing / 2 + 3))
+                    const start = labelPts[0]
+                    const next = labelPts[1] ?? start
+                    let angle = (Math.atan2(next.y - start.y, next.x - start.x) * 180) / Math.PI
+                    if (angle > 90 || angle < -90) angle += 180 // nunca al revés, sin importar hacia dónde corra el ducto
+                    const label = truncateLabelToWidth(c.name, polylineLength(pts) - 6, fontSize)
+                    return (
+                      <g key={c.id}>
+                        <path d={polylineToPath(offsetPts)} stroke={c.color} strokeWidth={2} fill="none" strokeLinecap="round" />
+                        {label && (
+                          <text
+                            x={start.x} y={start.y} transform={`rotate(${angle} ${start.x} ${start.y})`}
+                            fontSize={fontSize} fill={c.color} className="font-mono-ui"
+                          >
+                            {label}
+                          </text>
+                        )}
+                      </g>
+                    )
+                  })}
                 </g>
               )
             })}
@@ -982,7 +1008,7 @@ export const PlanCanvas = memo(function PlanCanvas({ level: levelProp, layerStat
       </g>
       <text x={bounds.maxX - 20} y={bounds.maxY - 15} fill="var(--text-tertiary)" fontSize={9} textAnchor="end" className="font-mono-ui">ESC. {project.scaleLabel}</text>
 
-      {interactive && (
+      {interactive && !store.viewOnly && (
         <ResizeControls bounds={bounds} onResize={onResizeSide ?? ((side, delta) => store.resizeCanvas(side, delta))} />
       )}
     </svg>
