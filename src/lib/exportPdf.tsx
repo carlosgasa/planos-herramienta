@@ -31,13 +31,15 @@ function pageLayerState(layer: LayerKey): LayerStateMap {
  *  sola página, así que evita lo que sea que causaba ese desfase en vez de
  *  intentar diagnosticarlo a fondo.
  *
- *  `showWiring` pisa temporalmente `store.showCircuitWiring` (lo que
- *  PlanCanvas.tsx de verdad lee para dibujar los hilos de color de cada
- *  circuito) — así la misma página de Eléctrica puede salir limpia o con
- *  cableado según qué variante se esté capturando, sin importar cómo haya
- *  quedado ese toggle en la UI en vivo (se restaura en `exportPlanToPdf`
- *  al terminar todo el export, no aquí, porque html2canvas necesita que el
- *  valor se quede fijo durante la captura async). */
+ *  `showWiring`/`showLabels` pisan temporalmente `store.showCircuitWiring`/
+ *  `store.showCircuitLabels` (lo que PlanCanvas.tsx de verdad lee para
+ *  dibujar los hilos de color y sus nombres) — así la misma página de
+ *  Eléctrica puede salir limpia, con cableado y etiquetas, o con cableado
+ *  sin etiquetas, según qué variante se esté capturando, sin importar cómo
+ *  hayan quedado esos toggles en la UI en vivo (se restauran en
+ *  `exportPlanToPdf` al terminar todo el export, no aquí, porque
+ *  html2canvas necesita que el valor se quede fijo durante la captura
+ *  async). */
 async function capturePage(opts: {
   html2canvas: typeof import('html2canvas').default
   level: LevelKey
@@ -45,11 +47,14 @@ async function capturePage(opts: {
   layer: LayerKey
   pageWidthPx: number
   showWiring: boolean
+  showLabels: boolean
 }) {
-  const { html2canvas, level, lvl, layer, pageWidthPx, showWiring } = opts
+  const { html2canvas, level, lvl, layer, pageWidthPx, showWiring, showLabels } = opts
   useProjectStore.getState().setShowCircuitWiring(showWiring)
+  useProjectStore.getState().setShowCircuitLabels(showLabels)
   const symbols = usedSymbology(lvl.layers[layer], layer)
   const showCircuitsLegend = layer === 'electrica' && showWiring && lvl.circuits.length > 0
+  const totalComponents = symbols.reduce((sum, s) => sum + s.count, 0)
 
   const host = document.createElement('div')
   host.style.position = 'fixed'
@@ -66,19 +71,26 @@ async function capturePage(opts: {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: `${pageWidthPx}px` }}>
           <PlanCanvas level={level} layerStateOverride={pageLayerState(layer)} />
           {(symbols.length > 0 || showCircuitsLegend) && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px 16px', borderTop: '1px solid #ccc', paddingTop: '8px' }}>
-              {symbols.map((s) => (
-                <div key={s.shape} style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                  <svg width={20} height={20} viewBox="-16 -16 32 32"><SymbolGlyph shape={s.shape} color={s.color} /></svg>
-                  <span style={{ fontSize: '9px', color: '#333', fontFamily: 'monospace' }}>{s.label}</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid #ccc', paddingTop: '10px' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 20px' }}>
+                {symbols.map((s) => (
+                  <div key={s.shape} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <svg width={28} height={28} viewBox="-16 -16 32 32"><SymbolGlyph shape={s.shape} color={s.color} /></svg>
+                    <span style={{ fontSize: '11px', color: '#333', fontFamily: 'monospace' }}>{s.label} ×{s.count}</span>
+                  </div>
+                ))}
+                {showCircuitsLegend && lvl.circuits.map((c) => (
+                  <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <span style={{ width: '11px', height: '11px', borderRadius: '50%', background: c.color, display: 'inline-block' }} />
+                    <span style={{ fontSize: '11px', color: '#333', fontFamily: 'monospace' }}>{c.name}</span>
+                  </div>
+                ))}
+              </div>
+              {symbols.length > 0 && (
+                <div style={{ fontSize: '10px', color: '#555', fontFamily: 'monospace', fontWeight: 'bold' }}>
+                  TOTAL DE COMPONENTES: {totalComponents}
                 </div>
-              ))}
-              {showCircuitsLegend && lvl.circuits.map((c) => (
-                <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <span style={{ width: '9px', height: '9px', borderRadius: '50%', background: c.color, display: 'inline-block' }} />
-                  <span style={{ fontSize: '9px', color: '#333', fontFamily: 'monospace' }}>{c.name}</span>
-                </div>
-              ))}
+              )}
             </div>
           )}
         </div>
@@ -98,10 +110,14 @@ export async function exportPlanToPdf(opts: {
   levelLabel: string
   checks: Record<LayerKey, boolean>
   /** Además de la página normal de Eléctrica, agrega una página extra con
-   *  los hilos de color + nombre de cada circuito asignado a cada ducto. */
+   *  los hilos de color de cada circuito asignado a cada ducto. */
   includeCircuitWiring?: boolean
+  /** Solo aplica si `includeCircuitWiring` es true: si la página extra
+   *  también dibuja el nombre de cada circuito sobre su hilo, o solo los
+   *  hilos de color (más limpio con varios circuitos cortos). */
+  includeCircuitLabels?: boolean
 }) {
-  const { project, level, levelLabel, checks, includeCircuitWiring = false } = opts
+  const { project, level, levelLabel, checks, includeCircuitWiring = false, includeCircuitLabels = true } = opts
   const lvl = project.levels.find((l) => l.key === level)
   if (!lvl) return
   const layers = LAYER_ORDER.filter((k) => checks[k])
@@ -111,13 +127,13 @@ export async function exportPlanToPdf(opts: {
   // cableado) solo si se pidió explícitamente, el resto de las capas
   // siempre sale en una sola página sin cableado (esa visualización es
   // exclusiva de Eléctrica).
-  type PageSpec = { layer: LayerKey; capaLabel: string; showWiring: boolean }
+  type PageSpec = { layer: LayerKey; capaLabel: string; showWiring: boolean; showLabels: boolean }
   const pages: PageSpec[] = layers.flatMap((layer): PageSpec[] => {
-    if (layer !== 'electrica') return [{ layer, capaLabel: LAYER_LABEL[layer], showWiring: false }]
-    if (!includeCircuitWiring) return [{ layer, capaLabel: LAYER_LABEL.electrica, showWiring: false }]
+    if (layer !== 'electrica') return [{ layer, capaLabel: LAYER_LABEL[layer], showWiring: false, showLabels: false }]
+    if (!includeCircuitWiring) return [{ layer, capaLabel: LAYER_LABEL.electrica, showWiring: false, showLabels: false }]
     return [
-      { layer, capaLabel: LAYER_LABEL.electrica, showWiring: false },
-      { layer, capaLabel: `${LAYER_LABEL.electrica} — Cableado`, showWiring: true }
+      { layer, capaLabel: LAYER_LABEL.electrica, showWiring: false, showLabels: false },
+      { layer, capaLabel: `${LAYER_LABEL.electrica} — Cableado`, showWiring: true, showLabels: includeCircuitLabels }
     ]
   })
 
@@ -141,11 +157,13 @@ export async function exportPlanToPdf(opts: {
   const htmlEl = document.documentElement
   const previousTheme = htmlEl.dataset.theme
   htmlEl.dataset.theme = 'light'
-  // Mismo trato para store.showCircuitWiring: capturePage() lo pisa por
-  // página (ver su comentario), pero el valor que tenía la UI en vivo
-  // antes de exportar se restaura al terminar, para no dejar el toggle de
-  // LayersPanel.tsx en un estado distinto al que el usuario había dejado.
+  // Mismo trato para store.showCircuitWiring/showCircuitLabels:
+  // capturePage() los pisa por página (ver su comentario), pero el valor
+  // que tenía la UI en vivo antes de exportar se restaura al terminar,
+  // para no dejar el toggle de LayersPanel.tsx en un estado distinto al
+  // que el usuario había dejado.
   const previousShowCircuitWiring = useProjectStore.getState().showCircuitWiring
+  const previousShowCircuitLabels = useProjectStore.getState().showCircuitLabels
 
   try {
     const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'letter' })
@@ -162,8 +180,8 @@ export async function exportPlanToPdf(opts: {
     const availH = pageH - margin * 2 - titleBlockH
 
     for (let i = 0; i < pages.length; i++) {
-      const { layer, capaLabel, showWiring } = pages[i]
-      const canvas = await capturePage({ html2canvas, level, lvl, layer, pageWidthPx, showWiring })
+      const { layer, capaLabel, showWiring, showLabels } = pages[i]
+      const canvas = await capturePage({ html2canvas, level, lvl, layer, pageWidthPx, showWiring, showLabels })
       const imgData = canvas.toDataURL('image/jpeg', 0.85)
 
       if (i > 0) pdf.addPage()
@@ -202,5 +220,6 @@ export async function exportPlanToPdf(opts: {
     if (previousTheme === undefined) delete htmlEl.dataset.theme
     else htmlEl.dataset.theme = previousTheme
     useProjectStore.getState().setShowCircuitWiring(previousShowCircuitWiring)
+    useProjectStore.getState().setShowCircuitLabels(previousShowCircuitLabels)
   }
 }

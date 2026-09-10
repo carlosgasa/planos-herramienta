@@ -27,6 +27,11 @@ export function ExportModal() {
   // store.showCircuitWiring) — la página "limpia" de Eléctrica siempre
   // sale primero, esta es adicional, no un reemplazo.
   const [includeCircuits, setIncludeCircuits] = useState(false)
+  // Solo importa cuando includeCircuits está marcado: si esa página extra
+  // también lleva el nombre de cada circuito sobre su hilo, o solo los
+  // hilos de color (más limpio cuando hay varios circuitos en tramos
+  // cortos — ver store.showCircuitLabels).
+  const [includeLabels, setIncludeLabels] = useState(true)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   if (!showExportModal || !project) return null
@@ -36,7 +41,11 @@ export function ExportModal() {
   const handleExportPdf = async () => {
     setExporting(true)
     try {
-      await exportPlanToPdf({ project, level, levelLabel, checks: exportChecks, includeCircuitWiring: exportChecks.electrica && includeCircuits })
+      await exportPlanToPdf({
+        project, level, levelLabel, checks: exportChecks,
+        includeCircuitWiring: exportChecks.electrica && includeCircuits,
+        includeCircuitLabels: includeLabels
+      })
       pushToast('PDF exportado ✓')
     } finally {
       setExporting(false)
@@ -101,10 +110,18 @@ export function ExportModal() {
               <div className="w-2.5 h-2.5 rounded-sm" style={{ background: d.color }} />
             </label>
             {d.key === 'electrica' && exportChecks.electrica && (
-              <label className="flex items-center gap-2.5 py-2 pl-6 border-b border-[color:var(--hairline)] cursor-pointer">
-                <input type="checkbox" checked={includeCircuits} onChange={() => setIncludeCircuits((v) => !v)} className="accent-cyan-400 w-[13px] h-[13px]" />
-                <span className="text-[11.5px] text-[var(--text-secondary)] flex-1">Incluir cableado de circuitos (página extra)</span>
-              </label>
+              <>
+                <label className="flex items-center gap-2.5 py-2 pl-6 border-b border-[color:var(--hairline)] cursor-pointer">
+                  <input type="checkbox" checked={includeCircuits} onChange={() => setIncludeCircuits((v) => !v)} className="accent-cyan-400 w-[13px] h-[13px]" />
+                  <span className="text-[11.5px] text-[var(--text-secondary)] flex-1">Incluir cableado de circuitos (página extra)</span>
+                </label>
+                {includeCircuits && (
+                  <label className="flex items-center gap-2.5 py-2 pl-11 border-b border-[color:var(--hairline)] cursor-pointer">
+                    <input type="checkbox" checked={includeLabels} onChange={() => setIncludeLabels((v) => !v)} className="accent-cyan-400 w-[12px] h-[12px]" />
+                    <span className="text-[11px] text-[var(--text-tertiary)] flex-1">Con etiquetas de nombre sobre cada hilo</span>
+                  </label>
+                )}
+              </>
             )}
           </div>
         ))}

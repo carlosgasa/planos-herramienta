@@ -931,7 +931,7 @@ export const PlanCanvas = memo(function PlanCanvas({ level: levelProp, layerStat
                       <g key={c.id}>
                         {isWhite && <path d={polylineToPath(offsetPts)} stroke="#000000" strokeWidth={3.4} fill="none" strokeLinecap="round" strokeDasharray={dash} />}
                         <path d={polylineToPath(offsetPts)} stroke={c.color} strokeWidth={2} fill="none" strokeLinecap="round" strokeDasharray={dash} />
-                        {label && (
+                        {label && store.showCircuitLabels && (
                           <text
                             x={mid.x} y={mid.y} transform={`rotate(${angle} ${mid.x} ${mid.y})`}
                             textAnchor="middle" dominantBaseline="middle"

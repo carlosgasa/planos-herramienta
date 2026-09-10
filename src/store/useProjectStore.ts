@@ -105,10 +105,19 @@ interface ProjectStoreState {
    *  temporalmente para poder exportar la página eléctrica con y sin
    *  cableado. */
   showCircuitWiring: boolean
+  /** Con los hilos de color visibles (`showCircuitWiring`), esto decide si
+   *  además se dibuja el nombre de cada circuito sobre su hilo — separado
+   *  para poder exportar el PDF con los hilos pero sin las etiquetas
+   *  (ver ExportModal.tsx, "Incluir etiquetas de nombre"), que en un
+   *  ducto con varios circuitos cortos puede verse más limpio. Solo lo
+   *  pisa exportPdf.tsx por página, no tiene ícono propio en
+   *  LayersPanel.tsx (a diferencia de showCircuitWiring). */
+  showCircuitLabels: boolean
 
   setViewOnly: (v: boolean) => void
   toggleShowCircuitWiring: () => void
   setShowCircuitWiring: (v: boolean) => void
+  setShowCircuitLabels: (v: boolean) => void
   setPipeDiameter: (d: PipeDiameter) => void
   toggleDrenajeFlujo: () => void
   setWaterType: (w: WaterType) => void
@@ -262,10 +271,12 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
   electricaStage: 'trazado',
   viewOnly: false,
   showCircuitWiring: true,
+  showCircuitLabels: true,
 
   setViewOnly: (v) => set({ viewOnly: v }),
   toggleShowCircuitWiring: () => set((s) => ({ showCircuitWiring: !s.showCircuitWiring })),
   setShowCircuitWiring: (v) => set({ showCircuitWiring: v }),
+  setShowCircuitLabels: (v) => set({ showCircuitLabels: v }),
   setPipeDiameter: (d) => set({ pipeDiameter: d }),
   toggleDrenajeFlujo: () => set((s) => ({ drenajeFlujo: !s.drenajeFlujo })),
   setWaterType: (w) => set({ waterType: w }),

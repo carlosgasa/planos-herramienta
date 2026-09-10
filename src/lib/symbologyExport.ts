@@ -22,19 +22,24 @@ export interface UsedSymbol {
   shape: SymbolShape
   label: string
   color: string
+  /** Cuántas instancias de este símbolo hay en la capa — para el "×N"
+   *  junto a cada ítem de la leyenda y el total de componentes al pie. */
+  count: number
 }
 
-/** Símbolos realmente colocados en `objects` (una capa de un nivel), sin
- *  duplicados por `shape` — el color de cada uno sale de la primera
- *  instancia encontrada (por ejemplo una pieza hidráulica fría vs caliente
- *  se queda con la del primer colocado, simplificación aceptable para una
- *  leyenda). */
+/** Símbolos realmente colocados en `objects` (una capa de un nivel),
+ *  agrupados por `shape` con su conteo — el color de cada uno sale de la
+ *  primera instancia encontrada (por ejemplo una pieza hidráulica fría vs
+ *  caliente se queda con la del primer colocado, simplificación aceptable
+ *  para una leyenda). */
 export function usedSymbology(objects: DrawObject[], layer: LayerKey): UsedSymbol[] {
   const labels = LAYER_SHAPE_LABELS[layer] ?? {}
   const seen = new Map<SymbolShape, UsedSymbol>()
   for (const o of objects) {
-    if (o.kind !== 'symbol' || seen.has(o.shape)) continue
-    seen.set(o.shape, { shape: o.shape, label: labels[o.shape] ?? o.shape, color: o.color })
+    if (o.kind !== 'symbol') continue
+    const existing = seen.get(o.shape)
+    if (existing) { existing.count++; continue }
+    seen.set(o.shape, { shape: o.shape, label: labels[o.shape] ?? o.shape, color: o.color, count: 1 })
   }
   return [...seen.values()]
 }
