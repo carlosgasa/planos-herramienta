@@ -161,6 +161,32 @@ function polylineLength(pts: Pt[]): number {
   return len
 }
 
+/** Punto a `targetLen` unidades a lo largo de la polilínea, con el ángulo
+ *  del TRAMO local que lo contiene (no siempre el primero) — para centrar
+ *  la etiqueta de un circuito a la mitad de su ducto (ver más abajo) en
+ *  vez de en su primer vértice: en un ducto con vueltas, anclarla siempre
+ *  al primer tramo la dejaba metida en la esquina/unión con el tramo
+ *  siguiente, en vez de a la mitad del tramo visible (bug real,
+ *  reportado). */
+function pointAtLength(pts: Pt[], targetLen: number): { x: number; y: number; angle: number } {
+  if (pts.length === 0) return { x: 0, y: 0, angle: 0 }
+  if (pts.length === 1) return { x: pts[0].x, y: pts[0].y, angle: 0 }
+  let acc = 0
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1]
+    const b = pts[i]
+    const segLen = Math.hypot(b.x - a.x, b.y - a.y)
+    const angle = (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI
+    if (i === pts.length - 1 || acc + segLen >= targetLen) {
+      const t = segLen === 0 ? 0 : Math.min(1, Math.max(0, (targetLen - acc) / segLen))
+      return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, angle }
+    }
+    acc += segLen
+  }
+  const last = pts[pts.length - 1]
+  return { x: last.x, y: last.y, angle: 0 }
+}
+
 /** Recorta la etiqueta de un circuito a lo que quepa a lo largo de su hilo
  *  de color en el ducto (ver bloque de "Cableado" más abajo) — a diferencia
  *  de HTML, un `<text>` de SVG no trunca solo con CSS, así que se estima el
@@ -851,21 +877,34 @@ export const PlanCanvas = memo(function PlanCanvas({ level: levelProp, layerStat
               const fontSize = 6.5
               return (
                 <g key={`${o.id}-circuitos`} pointerEvents="none">
-                  {/* Un hilo de color por circuito asignado, en abanico a los
-                      lados del ducto real, con su nombre centrado ENCIMA de
+                  {/* Un hilo de color por circuito asignado, en PARALELO al
+                      ducto real (nunca encima) — el offset arranca en
+                      `spacing`, no en 0, porque con un solo circuito
+                      `(i - (n-1)/2) * spacing` daba exactamente 0 y el hilo
+                      quedaba montado justo sobre la línea propia del ducto,
+                      tapándola por completo (bug real, reportado: "las
+                      líneas de luz quedan abajo de las líneas del
+                      circuito"). Con varios circuitos se siguen apilando en
+                      abanico hacia ese mismo lado, todos en paralelo entre
+                      sí y con el ducto. El nombre va centrado a la MITAD de
                       su propio hilo (truncado si no cabe) — así se
                       distingue de un vistazo cuántos y cuáles circuitos
-                      comparten ese tramo. El texto lleva un halo del color
-                      de fondo del lienzo (`stroke` + `paintOrder="stroke"`)
+                      comparten ese tramo. Se ancla a la mitad de la
+                      longitud total (`pointAtLength`, con el ángulo del
+                      tramo local que le toque) en vez de siempre al primer
+                      vértice — en un ducto con vueltas eso dejaba la
+                      etiqueta pegada a la esquina/unión con el tramo
+                      siguiente en vez de centrada en el tramo visible (bug
+                      real, reportado). El texto lleva un halo del color de
+                      fondo del lienzo (`stroke` + `paintOrder="stroke"`)
                       para que siga contrastando aunque el circuito sea del
                       mismo color que lo que tenga debajo (un hilo rojo con
                       su propia etiqueta en rojo, por ejemplo). */}
                   {circuits.map((c, i) => {
-                    const off = (i - (circuits.length - 1) / 2) * spacing
+                    const off = (i + 1) * spacing
                     const offsetPts = offsetPolyline(pts, off)
-                    const start = offsetPts[0]
-                    const next = offsetPts[1] ?? start
-                    let angle = (Math.atan2(next.y - start.y, next.x - start.x) * 180) / Math.PI
+                    const mid = pointAtLength(offsetPts, polylineLength(offsetPts) / 2)
+                    let angle = mid.angle
                     if (angle > 90 || angle < -90) angle += 180 // nunca al revés, sin importar hacia dónde corra el ducto
                     const label = truncateLabelToWidth(c.name, polylineLength(pts) - 6, fontSize)
                     return (
@@ -873,8 +912,8 @@ export const PlanCanvas = memo(function PlanCanvas({ level: levelProp, layerStat
                         <path d={polylineToPath(offsetPts)} stroke={c.color} strokeWidth={2} fill="none" strokeLinecap="round" />
                         {label && (
                           <text
-                            x={start.x} y={start.y} transform={`rotate(${angle} ${start.x} ${start.y})`}
-                            dominantBaseline="middle"
+                            x={mid.x} y={mid.y} transform={`rotate(${angle} ${mid.x} ${mid.y})`}
+                            textAnchor="middle" dominantBaseline="middle"
                             fontSize={fontSize} fill={c.color} className="font-mono-ui"
                             stroke="var(--bg-canvas)" strokeWidth={2.4} paintOrder="stroke" strokeLinejoin="round"
                           >

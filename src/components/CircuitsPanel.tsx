@@ -31,7 +31,17 @@ export function CircuitsPanel() {
   }
 
   return (
-    <div className="absolute right-4 top-4 w-64 rounded-xl border border-[color:var(--hairline)] bg-[color:var(--panel-bg-solid)] backdrop-blur-xl p-3.5 shadow-[0_0_30px_rgba(0,0,0,0.25)]">
+    // Este panel vive DENTRO del div de CanvasViewport.tsx que trae el
+    // onPointerDown de selección/arrastre del lienzo (a diferencia de
+    // PropertiesPanel/LayersPanel, que están fuera de ese div) — sin
+    // stopPropagation, un clic sobre un checkbox de aquí también le
+    // llegaba a ese handler, que hacía hit-test en esas coordenadas de
+    // pantalla y seleccionaba/arrastraba lo que hubiera del lienzo debajo
+    // del panel, como si el panel fuera transparente al clic (bug real,
+    // reportado).
+    <div
+      onPointerDown={(e) => e.stopPropagation()}
+      className="absolute right-4 top-4 w-64 rounded-xl border border-[color:var(--hairline)] bg-[color:var(--panel-bg-solid)] backdrop-blur-xl p-3.5 shadow-[0_0_30px_rgba(0,0,0,0.25)]">
       <div className="font-mono-ui text-[10px] tracking-[0.1em] text-[var(--text-tertiary)] mb-2">CIRCUITOS DERIVADOS</div>
 
       {lvl.circuits.length === 0 && <div className="text-[11px] text-[var(--text-tertiary)] mb-2">Aún no hay circuitos definidos.</div>}
