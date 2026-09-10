@@ -852,15 +852,19 @@ export const PlanCanvas = memo(function PlanCanvas({ level: levelProp, layerStat
               return (
                 <g key={`${o.id}-circuitos`} pointerEvents="none">
                   {/* Un hilo de color por circuito asignado, en abanico a los
-                      lados del ducto real, con su nombre encima (truncado si
-                      no cabe) — así se distingue de un vistazo cuántos y
-                      cuáles circuitos comparten ese tramo. */}
+                      lados del ducto real, con su nombre centrado ENCIMA de
+                      su propio hilo (truncado si no cabe) — así se
+                      distingue de un vistazo cuántos y cuáles circuitos
+                      comparten ese tramo. El texto lleva un halo del color
+                      de fondo del lienzo (`stroke` + `paintOrder="stroke"`)
+                      para que siga contrastando aunque el circuito sea del
+                      mismo color que lo que tenga debajo (un hilo rojo con
+                      su propia etiqueta en rojo, por ejemplo). */}
                   {circuits.map((c, i) => {
                     const off = (i - (circuits.length - 1) / 2) * spacing
                     const offsetPts = offsetPolyline(pts, off)
-                    const labelPts = offsetPolyline(pts, off + Math.sign(off || 1) * (spacing / 2 + 3))
-                    const start = labelPts[0]
-                    const next = labelPts[1] ?? start
+                    const start = offsetPts[0]
+                    const next = offsetPts[1] ?? start
                     let angle = (Math.atan2(next.y - start.y, next.x - start.x) * 180) / Math.PI
                     if (angle > 90 || angle < -90) angle += 180 // nunca al revés, sin importar hacia dónde corra el ducto
                     const label = truncateLabelToWidth(c.name, polylineLength(pts) - 6, fontSize)
@@ -870,7 +874,9 @@ export const PlanCanvas = memo(function PlanCanvas({ level: levelProp, layerStat
                         {label && (
                           <text
                             x={start.x} y={start.y} transform={`rotate(${angle} ${start.x} ${start.y})`}
+                            dominantBaseline="middle"
                             fontSize={fontSize} fill={c.color} className="font-mono-ui"
+                            stroke="var(--bg-canvas)" strokeWidth={2.4} paintOrder="stroke" strokeLinejoin="round"
                           >
                             {label}
                           </text>
