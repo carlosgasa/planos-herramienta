@@ -96,8 +96,19 @@ interface ProjectStoreState {
    *  No es responsabilidad del store decidir cuándo es "móvil" — solo
    *  reacciona a lo que `setViewOnly` le diga. */
   viewOnly: boolean
+  /** Muestra/oculta, en `PlanCanvas.tsx`, los hilos de color + etiqueta de
+   *  cada circuito asignado a un ducto — antes salían solo durante la
+   *  etapa "Cableado" (o siempre en `viewOnly`), sin forma de apagarlos a
+   *  propósito ni de verlos en otra etapa; ahora es un toggle aparte
+   *  (ícono de ojo extra en `LayersPanel.tsx`, fila de Eléctrica),
+   *  independiente de `electricaStage`. `exportPdf.tsx` también lo pisa
+   *  temporalmente para poder exportar la página eléctrica con y sin
+   *  cableado. */
+  showCircuitWiring: boolean
 
   setViewOnly: (v: boolean) => void
+  toggleShowCircuitWiring: () => void
+  setShowCircuitWiring: (v: boolean) => void
   setPipeDiameter: (d: PipeDiameter) => void
   toggleDrenajeFlujo: () => void
   setWaterType: (w: WaterType) => void
@@ -248,8 +259,11 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
   multiSelection: null,
   electricaStage: 'trazado',
   viewOnly: false,
+  showCircuitWiring: true,
 
   setViewOnly: (v) => set({ viewOnly: v }),
+  toggleShowCircuitWiring: () => set((s) => ({ showCircuitWiring: !s.showCircuitWiring })),
+  setShowCircuitWiring: (v) => set({ showCircuitWiring: v }),
   setPipeDiameter: (d) => set({ pipeDiameter: d }),
   toggleDrenajeFlujo: () => set((s) => ({ drenajeFlujo: !s.drenajeFlujo })),
   setWaterType: (w) => set({ waterType: w }),

@@ -13,7 +13,7 @@ const LAYER_DEFS: { key: LayerKey; label: string; color: string; order: number }
 ]
 
 export function LayersPanel() {
-  const { project, level, layerState, toggleLayerVisible, toggleLayerLock, setLayerOpacity, layersPanelCollapsed, toggleLayersPanelCollapsed, pushToast } = useProjectStore()
+  const { project, level, layerState, toggleLayerVisible, toggleLayerLock, setLayerOpacity, layersPanelCollapsed, toggleLayersPanelCollapsed, pushToast, showCircuitWiring, toggleShowCircuitWiring } = useProjectStore()
   const current = project?.levels.find((l) => l.key === level)
   const q = current ? quantifyLevel(current) : null
 
@@ -60,6 +60,19 @@ export function LayersPanel() {
                 />
                 <span className="font-mono-ui text-[10px] text-[var(--text-tertiary)] w-[30px] text-right">{st.opacity}%</span>
               </div>
+              {d.key === 'electrica' && (
+                <div className="flex items-center gap-2.5 mt-2 pt-2 border-t border-[color:var(--hairline)]">
+                  <div className="flex-1 text-[11px] text-[var(--text-secondary)]">Cableado de circuitos</div>
+                  <button
+                    onClick={toggleShowCircuitWiring}
+                    title="Mostrar/ocultar los hilos de color y nombres de los circuitos asignados a cada ducto"
+                    className="w-[26px] h-[26px] rounded-md flex items-center justify-center"
+                    style={{ color: showCircuitWiring ? d.color : '#4b4a5c' }}
+                  >
+                    <svg width={15} height={15} viewBox="0 0 24 24" fill="none"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke="currentColor" strokeWidth={1.6} /><circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth={1.6} /></svg>
+                  </button>
+                </div>
+              )}
             </div>
           )
         })}

@@ -867,7 +867,7 @@ export const PlanCanvas = memo(function PlanCanvas({ level: levelProp, layerStat
               (selection?.layer === key && selection.id === o.id) || (store.multiSelection?.layer === key && store.multiSelection.ids.includes(o.id)),
               !interactive
             ))}
-            {interactive && key === 'electrica' && (store.electricaStage === 'cableado' || store.viewOnly) && current.layers.electrica.map((o) => {
+            {key === 'electrica' && store.showCircuitWiring && current.layers.electrica.map((o) => {
               if (o.kind !== 'path') return null
               const ids = o.circuitIds ?? []
               const circuits = ids.map((id) => current.circuits.find((c) => c.id === id)).filter((c): c is Circuit => !!c)

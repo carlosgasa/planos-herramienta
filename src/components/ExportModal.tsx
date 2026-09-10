@@ -21,6 +21,12 @@ export function ExportModal() {
   const { project, level, showExportModal, closeExport, exportChecks, toggleExportCheck, setProject, setSyncState, pushToast } = useProjectStore()
   const [exporting, setExporting] = useState(false)
   const [importError, setImportError] = useState<string | null>(null)
+  // Aparte de los checks por capa: si se incluye Eléctrica, esto decide si
+  // se exporta también una segunda página de esa capa con los hilos de
+  // color + nombre de cada circuito asignado (ver PlanCanvas.tsx,
+  // store.showCircuitWiring) — la página "limpia" de Eléctrica siempre
+  // sale primero, esta es adicional, no un reemplazo.
+  const [includeCircuits, setIncludeCircuits] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   if (!showExportModal || !project) return null
@@ -30,7 +36,7 @@ export function ExportModal() {
   const handleExportPdf = async () => {
     setExporting(true)
     try {
-      await exportPlanToPdf({ project, level, levelLabel, checks: exportChecks })
+      await exportPlanToPdf({ project, level, levelLabel, checks: exportChecks, includeCircuitWiring: exportChecks.electrica && includeCircuits })
       pushToast('PDF exportado ✓')
     } finally {
       setExporting(false)
@@ -88,11 +94,19 @@ export function ExportModal() {
         <div className="text-[11.5px] text-[var(--text-secondary)] mb-4">{levelLabel} · {project.name}</div>
 
         {LAYER_DEFS.map((d) => (
-          <label key={d.key} className="flex items-center gap-2.5 py-2 border-b border-[color:var(--hairline)] cursor-pointer">
-            <input type="checkbox" checked={exportChecks[d.key]} onChange={() => toggleExportCheck(d.key)} className="accent-cyan-400 w-[15px] h-[15px]" />
-            <span className="text-[12.5px] flex-1">{d.label}</span>
-            <div className="w-2.5 h-2.5 rounded-sm" style={{ background: d.color }} />
-          </label>
+          <div key={d.key}>
+            <label className="flex items-center gap-2.5 py-2 border-b border-[color:var(--hairline)] cursor-pointer">
+              <input type="checkbox" checked={exportChecks[d.key]} onChange={() => toggleExportCheck(d.key)} className="accent-cyan-400 w-[15px] h-[15px]" />
+              <span className="text-[12.5px] flex-1">{d.label}</span>
+              <div className="w-2.5 h-2.5 rounded-sm" style={{ background: d.color }} />
+            </label>
+            {d.key === 'electrica' && exportChecks.electrica && (
+              <label className="flex items-center gap-2.5 py-2 pl-6 border-b border-[color:var(--hairline)] cursor-pointer">
+                <input type="checkbox" checked={includeCircuits} onChange={() => setIncludeCircuits((v) => !v)} className="accent-cyan-400 w-[13px] h-[13px]" />
+                <span className="text-[11.5px] text-[var(--text-secondary)] flex-1">Incluir cableado de circuitos (página extra)</span>
+              </label>
+            )}
+          </div>
         ))}
 
         <div className="mt-4 border border-dashed border-[color:var(--hairline)] rounded-[10px] p-3 font-mono-ui text-[10px] text-[var(--text-secondary)]">
