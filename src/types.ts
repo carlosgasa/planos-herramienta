@@ -27,6 +27,10 @@ export interface Circuit {
   id: string
   name: string
   type: CircuitType
+  /** Color elegido por el usuario de una paleta (ver `src/lib/circuitColors.ts`)
+   *  — pinta el ducto en `PlanCanvas.tsx` cuando el circuito queda asignado,
+   *  independiente del color fijo por `type`. */
+  color: string
 }
 
 /**

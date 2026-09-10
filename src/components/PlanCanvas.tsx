@@ -1,5 +1,5 @@
 import { memo, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
-import type { CanvasBounds, DrawObject, LayerKey, LayerStateMap, LevelKey } from '../types'
+import type { CanvasBounds, Circuit, DrawObject, LayerKey, LayerStateMap, LevelKey } from '../types'
 import { DEFAULT_CANVAS_BOUNDS } from '../types'
 import { useProjectStore } from '../store/useProjectStore'
 import { computeOpening, findWallNear, makeDoorObject, makeWindowObject, projectAlongWall, type WallHit } from '../lib/wallEdit'
@@ -120,6 +120,39 @@ function flowArrowMarks(d: string, spacing: number): { x: number; y: number; ang
     }
   }
   return marks
+}
+
+/** Desplaza cada punto de una polilínea `dist` unidades perpendicular a su
+ *  trazo (promediando la dirección de los dos tramos que tocan ese punto,
+ *  para que la línea desplazada no se abra en las esquinas) — así se
+ *  dibuja, para cada circuito asignado a un ducto, una línea delgada de su
+ *  color corriendo en paralelo al ducto real en vez de encimarse todas
+ *  (ver el bloque de "Cableado" más abajo). Pensado para las polilíneas
+ *  cortas y mayormente rectas que produce la herramienta de ducto — no
+ *  hace miter/bevel real en las esquinas, suficiente para ese caso. */
+function offsetPolyline(pts: Pt[], dist: number): Pt[] {
+  if (pts.length < 2 || dist === 0) return pts
+  return pts.map((p, i) => {
+    const dirs: Pt[] = []
+    if (i > 0) {
+      const a = pts[i - 1]
+      const len = Math.hypot(p.x - a.x, p.y - a.y) || 1
+      dirs.push({ x: (p.x - a.x) / len, y: (p.y - a.y) / len })
+    }
+    if (i < pts.length - 1) {
+      const b = pts[i + 1]
+      const len = Math.hypot(b.x - p.x, b.y - p.y) || 1
+      dirs.push({ x: (b.x - p.x) / len, y: (b.y - p.y) / len })
+    }
+    const ux = dirs.reduce((s, d) => s + d.x, 0) / dirs.length
+    const uy = dirs.reduce((s, d) => s + d.y, 0) / dirs.length
+    const len = Math.hypot(ux, uy) || 1
+    return { x: p.x + (-uy / len) * dist, y: p.y + (ux / len) * dist }
+  })
+}
+
+function polylineToPath(pts: Pt[]): string {
+  return pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
 }
 
 function pathMidpoint(d: string): Pt {
@@ -800,12 +833,25 @@ export const PlanCanvas = memo(function PlanCanvas({ level: levelProp, layerStat
             ))}
             {interactive && key === 'electrica' && store.electricaStage === 'cableado' && current.layers.electrica.map((o) => {
               if (o.kind !== 'path') return null
+              const ids = o.circuitIds ?? []
+              const circuits = ids.map((id) => current.circuits.find((c) => c.id === id)).filter((c): c is Circuit => !!c)
               const mid = pathMidpoint(o.d)
-              const count = o.circuitIds?.length ?? 0
+              const pts = parsePathPoints(o.d)
+              const spacing = 5
               return (
                 <g key={`${o.id}-badge`} pointerEvents="none">
+                  {/* Un hilo de color por circuito asignado, en abanico a los
+                      lados del ducto real — así se distingue de un vistazo
+                      cuántos y cuáles circuitos comparten ese tramo. */}
+                  {circuits.map((c, i) => (
+                    <path
+                      key={c.id}
+                      d={polylineToPath(offsetPolyline(pts, (i - (circuits.length - 1) / 2) * spacing))}
+                      stroke={c.color} strokeWidth={2} fill="none" strokeLinecap="round"
+                    />
+                  ))}
                   <circle cx={mid.x} cy={mid.y} r={9} fill="var(--layer-electrica)" />
-                  <text x={mid.x} y={mid.y + 3} fontSize={9} fontWeight={700} textAnchor="middle" fill="#0a0a10" className="font-mono-ui">{count}</text>
+                  <text x={mid.x} y={mid.y + 3} fontSize={9} fontWeight={700} textAnchor="middle" fill="#0a0a10" className="font-mono-ui">{ids.length}</text>
                 </g>
               )
             })}

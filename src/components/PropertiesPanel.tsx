@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { useProjectStore } from '../store/useProjectStore'
-import type { CircuitType, DrawObject, HidraulicaMaterial } from '../types'
+import type { DrawObject, HidraulicaMaterial } from '../types'
 import { doorWidth, flipDoorObject, resizeDoorObject, swapDoorHinge } from '../lib/wallEdit'
 
 const COLOR_SWATCHES = [
@@ -12,12 +12,6 @@ const KIND_LABEL: Record<DrawObject['kind'], string> = {
   wall: 'Muro', doorArc: 'Puerta', window: 'Ventana', dome: 'Domo',
   path: 'Línea / tubería / ducto', circle: 'Círculo', rect: 'Rectángulo',
   text: 'Etiqueta / texto', symbol: 'Símbolo'
-}
-
-const CIRCUIT_COLOR: Record<CircuitType, string> = {
-  contactos: 'var(--circuit-contactos)',
-  iluminacion: 'var(--circuit-iluminacion)',
-  fuerza: 'var(--circuit-fuerza)'
 }
 
 const MATERIALES: { key: HidraulicaMaterial; label: string; title: string }[] = [
@@ -184,7 +178,7 @@ export function PropertiesPanel() {
                 <div className="flex flex-col gap-1">
                   {current.circuits.map((c) => (
                     <div key={c.id} className="flex items-center gap-1.5 text-[10.5px] text-[var(--text-secondary)]">
-                      <div className="w-1.5 h-1.5 rounded-full flex-none" style={{ background: CIRCUIT_COLOR[c.type] }} />
+                      <div className="w-1.5 h-1.5 rounded-full flex-none" style={{ background: c.color }} />
                       <span className="truncate">{c.name}</span>
                     </div>
                   ))}

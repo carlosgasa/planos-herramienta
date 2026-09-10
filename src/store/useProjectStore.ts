@@ -151,7 +151,7 @@ interface ProjectStoreState {
   setHandlePoint: (objId: string, layer: LayerKey, handleId: string, x: number, y: number) => void
 
   setElectricaStage: (s: ElectricaStage) => void
-  addCircuit: (name: string, type: CircuitType) => void
+  addCircuit: (name: string, type: CircuitType, color: string) => void
   removeCircuit: (id: string) => void
   toggleCircuitOnDuct: (objId: string, circuitId: string) => void
 }
@@ -485,9 +485,9 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
   },
 
   setElectricaStage: (electricaStage) => set({ electricaStage, selection: null, multiSelection: null }),
-  addCircuit: (name, type) => set((s) => {
+  addCircuit: (name, type, color) => set((s) => {
     if (!s.project) return s
-    const circuit: Circuit = { id: newId('circ'), name, type }
+    const circuit: Circuit = { id: newId('circ'), name, type, color }
     const levels = s.project.levels.map((lvl) => lvl.key === s.level ? { ...lvl, circuits: [...lvl.circuits, circuit] } : lvl)
     return { project: { ...s.project, levels, updatedAt: Date.now() } }
   }),
