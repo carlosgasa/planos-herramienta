@@ -13,9 +13,13 @@ const TYPE_DEFS: { key: CircuitType; label: string; color: string }[] = [
 /** Fila de un circuito en cualquiera de las dos listas (Circuitos
  *  derivados / Retornos) — el nombre se edita con doble clic (mismo
  *  patrón que renombrar un nivel en TopBar.tsx): un input reemplaza el
- *  texto, Enter o perder el foco confirma, Escape cancela sin guardar. */
+ *  texto, Enter o perder el foco confirma, Escape cancela sin guardar. El
+ *  punto de color es un botón: un clic despliega la misma paleta de
+ *  `CIRCUIT_PALETTE` justo debajo, para poder cambiarle el color a un
+ *  circuito ya creado (antes solo se elegía una vez, al crearlo). */
 function CircuitRow({
-  circuit, editingId, editingValue, onStartEdit, onChangeEdit, onCommitEdit, onCancelEdit, onRemove
+  circuit, editingId, editingValue, onStartEdit, onChangeEdit, onCommitEdit, onCancelEdit, onRemove,
+  colorPickerId, onToggleColorPicker, onSetColor
 }: {
   circuit: Circuit
   editingId: string | null
@@ -25,33 +29,55 @@ function CircuitRow({
   onCommitEdit: () => void
   onCancelEdit: () => void
   onRemove: (id: string) => void
+  colorPickerId: string | null
+  onToggleColorPicker: (id: string) => void
+  onSetColor: (id: string, color: string) => void
 }) {
   const isEditing = editingId === circuit.id
+  const pickerOpen = colorPickerId === circuit.id
   return (
-    <div className="flex items-center gap-2 text-[11.5px]">
-      <div className="w-2 h-2 rounded-full flex-none" style={{ background: circuit.color, boxShadow: circuitContourShadow(circuit.color) }} />
-      {isEditing ? (
-        <input
-          autoFocus value={editingValue} onChange={(e) => onChangeEdit(e.target.value)}
-          onBlur={onCommitEdit}
-          onKeyDown={(e) => { if (e.key === 'Enter') onCommitEdit(); if (e.key === 'Escape') onCancelEdit() }}
-          className="flex-1 min-w-0 bg-[color:var(--glass-strong)] border border-cyan-400/50 rounded px-1 py-0.5 text-[11.5px] outline-none text-[var(--text-primary)]"
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-2 text-[11.5px]">
+        <button
+          onClick={() => onToggleColorPicker(circuit.id)} title="Cambiar color"
+          className="w-2.5 h-2.5 rounded-full flex-none"
+          style={{ background: circuit.color, boxShadow: circuitContourShadow(circuit.color, pickerOpen ? '0 0 0 2px var(--text-primary)' : undefined) }}
         />
-      ) : (
-        <span onDoubleClick={() => onStartEdit(circuit)} title="Doble clic para renombrar" className="flex-1 truncate cursor-text">{circuit.name}</span>
+        {isEditing ? (
+          <input
+            autoFocus value={editingValue} onChange={(e) => onChangeEdit(e.target.value)}
+            onBlur={onCommitEdit}
+            onKeyDown={(e) => { if (e.key === 'Enter') onCommitEdit(); if (e.key === 'Escape') onCancelEdit() }}
+            className="flex-1 min-w-0 bg-[color:var(--glass-strong)] border border-cyan-400/50 rounded px-1 py-0.5 text-[11.5px] outline-none text-[var(--text-primary)]"
+          />
+        ) : (
+          <span onDoubleClick={() => onStartEdit(circuit)} title="Doble clic para renombrar" className="flex-1 truncate cursor-text">{circuit.name}</span>
+        )}
+        <button onClick={() => onRemove(circuit.id)} className="text-[var(--text-tertiary)] hover:text-[color:var(--danger-text)] text-[10px]">✕</button>
+      </div>
+      {pickerOpen && (
+        <div className="flex items-center gap-1 flex-wrap pl-4">
+          {CIRCUIT_PALETTE.map((c) => (
+            <button
+              key={c} onClick={() => onSetColor(circuit.id, c)} title={c}
+              className="w-[15px] h-[15px] rounded-full flex-none"
+              style={{ background: c, boxShadow: circuitContourShadow(c, circuit.color === c ? '0 0 0 2px var(--text-primary)' : '0 0 0 1px color-mix(in srgb, var(--text-tertiary) 40%, transparent)') }}
+            />
+          ))}
+        </div>
       )}
-      <button onClick={() => onRemove(circuit.id)} className="text-[var(--text-tertiary)] hover:text-[color:var(--danger-text)] text-[10px]">✕</button>
     </div>
   )
 }
 
 export function CircuitsPanel() {
-  const { project, level, selection, electricaStage, addCircuit, renameCircuit, removeCircuit, toggleCircuitOnDuct } = useProjectStore()
+  const { project, level, selection, electricaStage, addCircuit, renameCircuit, setCircuitColor, removeCircuit, toggleCircuitOnDuct } = useProjectStore()
   const [name, setName] = useState('')
   const [type, setType] = useState<CircuitType>('contactos')
   const [color, setColor] = useState<string>(CIRCUIT_PALETTE[0])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingValue, setEditingValue] = useState('')
+  const [colorPickerId, setColorPickerId] = useState<string | null>(null)
 
   if (electricaStage !== 'cableado') return null
   const lvl = project?.levels.find((l) => l.key === level)
@@ -71,14 +97,19 @@ export function CircuitsPanel() {
     setColor(nextCircuitColor(lvl.circuits.length + 1))
   }
 
-  const startEdit = (c: Circuit) => { setEditingId(c.id); setEditingValue(c.name) }
+  const startEdit = (c: Circuit) => { setColorPickerId(null); setEditingId(c.id); setEditingValue(c.name) }
   const commitEdit = () => {
     if (editingId) renameCircuit(editingId, editingValue)
     setEditingId(null)
   }
   const cancelEdit = () => setEditingId(null)
+  const toggleColorPicker = (id: string) => { setEditingId(null); setColorPickerId((cur) => cur === id ? null : id) }
+  const setCircuitColorAndClose = (id: string, c: string) => { setCircuitColor(id, c); setColorPickerId(null) }
 
-  const rowProps = { editingId, editingValue, onStartEdit: startEdit, onChangeEdit: setEditingValue, onCommitEdit: commitEdit, onCancelEdit: cancelEdit, onRemove: removeCircuit }
+  const rowProps = {
+    editingId, editingValue, onStartEdit: startEdit, onChangeEdit: setEditingValue, onCommitEdit: commitEdit, onCancelEdit: cancelEdit, onRemove: removeCircuit,
+    colorPickerId, onToggleColorPicker: toggleColorPicker, onSetColor: setCircuitColorAndClose
+  }
 
   return (
     // Este panel vive DENTRO del div de CanvasViewport.tsx que trae el
