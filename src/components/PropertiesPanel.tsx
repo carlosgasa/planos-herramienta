@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { useProjectStore } from '../store/useProjectStore'
 import type { DrawObject, HidraulicaMaterial } from '../types'
 import { doorWidth, flipDoorObject, resizeDoorObject, swapDoorHinge } from '../lib/wallEdit'
+import { circuitContourShadow } from '../lib/circuitColors'
 
 const COLOR_SWATCHES = [
   'var(--text-primary)', 'var(--layer-drenaje)', 'var(--pipe-fria)', 'var(--pipe-caliente)',
@@ -178,7 +179,7 @@ export function PropertiesPanel() {
                 <div className="flex flex-col gap-1">
                   {current.circuits.map((c) => (
                     <div key={c.id} className="flex items-center gap-1.5 text-[10.5px] text-[var(--text-secondary)]">
-                      <div className="w-1.5 h-1.5 rounded-full flex-none" style={{ background: c.color }} />
+                      <div className="w-1.5 h-1.5 rounded-full flex-none" style={{ background: c.color, boxShadow: circuitContourShadow(c.color) }} />
                       <span className="truncate">{c.name}</span>
                     </div>
                   ))}

@@ -6,6 +6,7 @@ import { computeOpening, findWallNear, makeDoorObject, makeWindowObject, project
 import { findNearbyEndpoint, findObjectNear, getHandles, shiftPathData } from '../lib/hitTest'
 import { computeRooms } from '../lib/rooms'
 import { SymbolGlyph } from '../lib/symbols'
+import { CIRCUIT_WHITE } from '../lib/circuitColors'
 import {
   DISPOSITIVO_DEFS,
   makeDispositivoObject, makeEquipoObject, makeEscaleraObject, makePiezaHidraulicaObject, makePiezaObject, makePrincipalObject
@@ -899,7 +900,13 @@ export const PlanCanvas = memo(function PlanCanvas({ level: levelProp, layerStat
                       fondo del lienzo (`stroke` + `paintOrder="stroke"`)
                       para que siga contrastando aunque el circuito sea del
                       mismo color que lo que tenga debajo (un hilo rojo con
-                      su propia etiqueta en rojo, por ejemplo). */}
+                      su propia etiqueta en rojo, por ejemplo) — salvo el
+                      circuito blanco (`CIRCUIT_WHITE`), caso especial: su
+                      halo es siempre negro (no el color de fondo, que en
+                      tema claro / al exportar a PDF también es blanco y no
+                      serviría de nada) y su hilo lleva un contorno negro
+                      propio por debajo, para que "blanco" se note incluso
+                      contra un fondo blanco. */}
                   {circuits.map((c, i) => {
                     const off = (i + 1) * spacing
                     const offsetPts = offsetPolyline(pts, off)
@@ -907,15 +914,17 @@ export const PlanCanvas = memo(function PlanCanvas({ level: levelProp, layerStat
                     let angle = mid.angle
                     if (angle > 90 || angle < -90) angle += 180 // nunca al revés, sin importar hacia dónde corra el ducto
                     const label = truncateLabelToWidth(c.name, polylineLength(pts) - 6, fontSize)
+                    const isWhite = c.color === CIRCUIT_WHITE
                     return (
                       <g key={c.id}>
+                        {isWhite && <path d={polylineToPath(offsetPts)} stroke="#000000" strokeWidth={3.4} fill="none" strokeLinecap="round" />}
                         <path d={polylineToPath(offsetPts)} stroke={c.color} strokeWidth={2} fill="none" strokeLinecap="round" />
                         {label && (
                           <text
                             x={mid.x} y={mid.y} transform={`rotate(${angle} ${mid.x} ${mid.y})`}
                             textAnchor="middle" dominantBaseline="middle"
                             fontSize={fontSize} fill={c.color} className="font-mono-ui"
-                            stroke="var(--bg-canvas)" strokeWidth={2.4} paintOrder="stroke" strokeLinejoin="round"
+                            stroke={isWhite ? '#000000' : 'var(--bg-canvas)'} strokeWidth={2.4} paintOrder="stroke" strokeLinejoin="round"
                           >
                             {label}
                           </text>

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useProjectStore } from '../store/useProjectStore'
 import type { CircuitType } from '../types'
-import { CIRCUIT_PALETTE, nextCircuitColor } from '../lib/circuitColors'
+import { CIRCUIT_PALETTE, circuitContourShadow, nextCircuitColor } from '../lib/circuitColors'
 
 const TYPE_DEFS: { key: CircuitType; label: string; color: string }[] = [
   { key: 'contactos', label: 'Contactos', color: 'var(--circuit-contactos)' },
@@ -48,7 +48,7 @@ export function CircuitsPanel() {
       <div className="flex flex-col gap-1.5 mb-3 max-h-32 overflow-y-auto">
         {lvl.circuits.map((c) => (
           <div key={c.id} className="flex items-center gap-2 text-[11.5px]">
-            <div className="w-2 h-2 rounded-full flex-none" style={{ background: c.color }} />
+            <div className="w-2 h-2 rounded-full flex-none" style={{ background: c.color, boxShadow: circuitContourShadow(c.color) }} />
             <span className="flex-1 truncate">{c.name}</span>
             <button onClick={() => removeCircuit(c.id)} className="text-[var(--text-tertiary)] hover:text-[color:var(--danger-text)] text-[10px]">✕</button>
           </div>
@@ -78,11 +78,16 @@ export function CircuitsPanel() {
             <button
               key={c} onClick={() => setColor(c)} title={c}
               className="w-[15px] h-[15px] rounded-full flex-none"
-              style={{ background: c, boxShadow: color === c ? '0 0 0 2px var(--text-primary)' : '0 0 0 1px color-mix(in srgb, var(--text-tertiary) 40%, transparent)' }}
+              style={{ background: c, boxShadow: circuitContourShadow(c, color === c ? '0 0 0 2px var(--text-primary)' : '0 0 0 1px color-mix(in srgb, var(--text-tertiary) 40%, transparent)') }}
             />
           ))}
         </div>
-        <button onClick={handleAdd} className="rounded-[8px] py-1.5 text-[11px] font-semibold text-[#0a0a10]" style={{ background: color }}>+ Agregar circuito</button>
+        <button
+          onClick={handleAdd} className="rounded-[8px] py-1.5 text-[11px] font-semibold text-[#0a0a10]"
+          style={{ background: color, boxShadow: circuitContourShadow(color) }}
+        >
+          + Agregar circuito
+        </button>
       </div>
 
       {selectedDuct ? (
@@ -95,7 +100,7 @@ export function CircuitsPanel() {
               return (
                 <label key={c.id} className="flex items-center gap-2 text-[11.5px] cursor-pointer">
                   <input type="checkbox" checked={checked} onChange={() => toggleCircuitOnDuct(selectedDuct.id, c.id)} className="accent-cyan-400" />
-                  <div className="w-2 h-2 rounded-full flex-none" style={{ background: c.color }} />
+                  <div className="w-2 h-2 rounded-full flex-none" style={{ background: c.color, boxShadow: circuitContourShadow(c.color) }} />
                   <span>{c.name}</span>
                 </label>
               )
