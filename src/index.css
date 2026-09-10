@@ -36,6 +36,7 @@
   --circuit-contactos: #4ade80;
   --circuit-iluminacion: #facc15;
   --circuit-fuerza: #fb923c;
+  --circuit-retorno: #818cf8;
 
   /* Texto de insignias/estados sobre su propio fondo translúcido (banner de
      aviso, botón "Sí" de confirmar borrado, toggles activos, enlaces al
@@ -83,6 +84,7 @@
   --circuit-contactos: #16a34a;
   --circuit-iluminacion: #a16207;
   --circuit-fuerza: #c2410c;
+  --circuit-retorno: #4338ca;
 
   --warn-text: #92400e;
   --danger-text: #b91c1c;
@@ -123,6 +125,7 @@
   --circuit-contactos: #4ade80;
   --circuit-iluminacion: #eab308;
   --circuit-fuerza: #f97316;
+  --circuit-retorno: #818cf8;
 }
 
 html, body, #root {

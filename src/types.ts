@@ -20,7 +20,13 @@ export type SymbolShape =
   | 'llave' | 'llaveNariz' | 'toma' | 'checkValve' | 'conector' | 'tuercaUnion' | 'medidor' | 'filtro'
   | 'escalera'
 
-export type CircuitType = 'contactos' | 'iluminacion' | 'fuerza'
+/** 'retorno' es distinto de los otros tres: no es un circuito derivado del
+ *  tablero, es el conductor de ida y vuelta entre un apagador/timbre y lo
+ *  que controla (una lámpara, el timbre mismo) — convención real de plano
+ *  eléctrico, se dibuja/organiza aparte aunque comparta el mismo mecanismo
+ *  de asignar-a-un-ducto que los circuitos derivados (ver CircuitsPanel.tsx,
+ *  que lo separa en su propia sección "Retornos"). */
+export type CircuitType = 'contactos' | 'iluminacion' | 'fuerza' | 'retorno'
 export type HidraulicaMaterial = 'cobre' | 'ppr' | 'cpvc' | 'manguera'
 
 export interface Circuit {

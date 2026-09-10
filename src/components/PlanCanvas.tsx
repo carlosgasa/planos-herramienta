@@ -922,10 +922,15 @@ export const PlanCanvas = memo(function PlanCanvas({ level: levelProp, layerStat
                     const label = truncateLabelToWidth(c.name, polylineLength(pts) - 6, fontSize)
                     const isWhite = c.color === CIRCUIT_WHITE
                     const haloColor = c.color === '#000000' ? '#ffffff' : '#000000'
+                    // Un "retorno" no es un circuito derivado del tablero
+                    // (ver types.ts) — su hilo sale punteado en vez de
+                    // sólido para que la diferencia se note de un vistazo
+                    // en el plano, no solo en el panel.
+                    const dash = c.type === 'retorno' ? '3 2' : undefined
                     return (
                       <g key={c.id}>
-                        {isWhite && <path d={polylineToPath(offsetPts)} stroke="#000000" strokeWidth={3.4} fill="none" strokeLinecap="round" />}
-                        <path d={polylineToPath(offsetPts)} stroke={c.color} strokeWidth={2} fill="none" strokeLinecap="round" />
+                        {isWhite && <path d={polylineToPath(offsetPts)} stroke="#000000" strokeWidth={3.4} fill="none" strokeLinecap="round" strokeDasharray={dash} />}
+                        <path d={polylineToPath(offsetPts)} stroke={c.color} strokeWidth={2} fill="none" strokeLinecap="round" strokeDasharray={dash} />
                         {label && (
                           <text
                             x={mid.x} y={mid.y} transform={`rotate(${angle} ${mid.x} ${mid.y})`}

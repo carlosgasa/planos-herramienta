@@ -172,6 +172,7 @@ interface ProjectStoreState {
 
   setElectricaStage: (s: ElectricaStage) => void
   addCircuit: (name: string, type: CircuitType, color: string) => void
+  renameCircuit: (id: string, name: string) => void
   removeCircuit: (id: string) => void
   toggleCircuitOnDuct: (objId: string, circuitId: string) => void
 }
@@ -514,6 +515,13 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     if (!s.project) return s
     const circuit: Circuit = { id: newId('circ'), name, type, color }
     const levels = s.project.levels.map((lvl) => lvl.key === s.level ? { ...lvl, circuits: [...lvl.circuits, circuit] } : lvl)
+    return { project: { ...s.project, levels, updatedAt: Date.now() } }
+  }),
+  renameCircuit: (id, name) => set((s) => {
+    if (!s.project || !name.trim()) return s
+    const levels = s.project.levels.map((lvl) => lvl.key === s.level
+      ? { ...lvl, circuits: lvl.circuits.map((c) => c.id === id ? { ...c, name: name.trim() } : c) }
+      : lvl)
     return { project: { ...s.project, levels, updatedAt: Date.now() } }
   }),
   removeCircuit: (id) => set((s) => {
