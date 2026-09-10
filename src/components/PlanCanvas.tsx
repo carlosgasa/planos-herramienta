@@ -896,17 +896,23 @@ export const PlanCanvas = memo(function PlanCanvas({ level: levelProp, layerStat
                       vértice — en un ducto con vueltas eso dejaba la
                       etiqueta pegada a la esquina/unión con el tramo
                       siguiente en vez de centrada en el tramo visible (bug
-                      real, reportado). El texto lleva un halo del color de
-                      fondo del lienzo (`stroke` + `paintOrder="stroke"`)
-                      para que siga contrastando aunque el circuito sea del
-                      mismo color que lo que tenga debajo (un hilo rojo con
-                      su propia etiqueta en rojo, por ejemplo) — salvo el
-                      circuito blanco (`CIRCUIT_WHITE`), caso especial: su
-                      halo es siempre negro (no el color de fondo, que en
-                      tema claro / al exportar a PDF también es blanco y no
-                      serviría de nada) y su hilo lleva un contorno negro
-                      propio por debajo, para que "blanco" se note incluso
-                      contra un fondo blanco. */}
+                      real, reportado). El texto lleva un halo delgado
+                      (`stroke` + `paintOrder="stroke"`) para que siga
+                      contrastando aunque el circuito sea del mismo color
+                      que lo que tenga debajo (un hilo rojo con su propia
+                      etiqueta en rojo, por ejemplo) — SIEMPRE negro salvo
+                      para el circuito negro, que lo lleva blanco (el
+                      mismo caso al revés). No usa el color de fondo del
+                      lienzo como antes: en tema claro (o al exportar a
+                      PDF, que siempre fuerza fondo blanco) ese halo salía
+                      blanco — sin aportar nada contra un fondo ya blanco y
+                      encima de grosor exagerado, se veía como un borrón
+                      blanco más grueso que las letras mismas en vez de un
+                      contorno fino (bug real, reportado, con captura). El
+                      circuito blanco (`CIRCUIT_WHITE`) además lleva su
+                      hilo con un contorno negro propio por debajo, para
+                      que "blanco" se note incluso contra un fondo
+                      blanco. */}
                   {circuits.map((c, i) => {
                     const off = (i + 1) * spacing
                     const offsetPts = offsetPolyline(pts, off)
@@ -915,6 +921,7 @@ export const PlanCanvas = memo(function PlanCanvas({ level: levelProp, layerStat
                     if (angle > 90 || angle < -90) angle += 180 // nunca al revés, sin importar hacia dónde corra el ducto
                     const label = truncateLabelToWidth(c.name, polylineLength(pts) - 6, fontSize)
                     const isWhite = c.color === CIRCUIT_WHITE
+                    const haloColor = c.color === '#000000' ? '#ffffff' : '#000000'
                     return (
                       <g key={c.id}>
                         {isWhite && <path d={polylineToPath(offsetPts)} stroke="#000000" strokeWidth={3.4} fill="none" strokeLinecap="round" />}
@@ -924,7 +931,7 @@ export const PlanCanvas = memo(function PlanCanvas({ level: levelProp, layerStat
                             x={mid.x} y={mid.y} transform={`rotate(${angle} ${mid.x} ${mid.y})`}
                             textAnchor="middle" dominantBaseline="middle"
                             fontSize={fontSize} fill={c.color} className="font-mono-ui"
-                            stroke={isWhite ? '#000000' : 'var(--bg-canvas)'} strokeWidth={2.4} paintOrder="stroke" strokeLinejoin="round"
+                            stroke={haloColor} strokeWidth={1.1} paintOrder="stroke" strokeLinejoin="round"
                           >
                             {label}
                           </text>
